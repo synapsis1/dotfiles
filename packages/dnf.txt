@@ -1,9 +1,22 @@
 # Packages installed on RHEL/Fedora/Rocky/Alma hosts (dnf or yum). One per line; # starts a comment.
+# Kept in step with apt.txt; names differ where noted.
 git
-curl
 tmux
 jq
-# equivalent of Debian's build-essential
+socat
+ca-certificates
+automake
+# curl is deliberately absent: RHEL 9 minimal images ship curl-minimal, which conflicts with the curl package
+# build-essential ->
 gcc
 gcc-c++
 make
+# bind9-utils -> (dig, host, nslookup, nsupdate)
+bind-utils
+# xz-utils ->
+xz
+# autogen: lives in the CRB / PowerTools repo on RHEL-family; skipped with a warning if that repo is off
+autogen
+# Containers: Podman instead of Docker on this family
+podman
+crun

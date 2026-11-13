@@ -12,7 +12,8 @@ No curl? Use `wget -qO- <same URL> | bash`. `bootstrap.sh` installs git if it is
 
 `install.sh` is safe to re-run. It:
 
-1. Installs whatever is missing from `packages/apt.txt` (Debian/Ubuntu) or `packages/dnf.txt` (RHEL family), using sudo. Skip with `--no-packages`; preview with `--check-packages`.
+1. Installs whatever is missing from `packages/apt.txt` (Debian/Ubuntu) or `packages/dnf.txt` (RHEL family), using sudo. Skip with `--no-packages`; preview with `--check-packages`. Existing packages are not upgraded.
+   - `--with-docker` (Debian/Ubuntu only) also adds Docker's apt repository, installs Docker Engine with the compose and buildx plugins, and adds you to the `docker` group. RHEL-family hosts get `podman` and `crun` from `packages/dnf.txt` instead.
 2. Symlinks every file under `home/` into `$HOME`, backing up anything it replaces to `<name>.bak.<timestamp>`.
 3. Appends one line to `~/.bashrc` that sources `~/.config/shell/common.sh`. The distro's `.bashrc` is otherwise untouched.
 4. Creates `~/.claude/settings.json` from `templates/` only if none exists.

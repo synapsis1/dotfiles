@@ -4,3 +4,9 @@ curl
 tmux
 jq
 build-essential
+bind9-utils
+ca-certificates
+xz-utils
+socat
+automake
+autogen
