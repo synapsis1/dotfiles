@@ -1,0 +1,9 @@
+# Packages installed on RHEL/Fedora/Rocky/Alma hosts (dnf or yum). One per line; # starts a comment.
+git
+curl
+tmux
+jq
+# equivalent of Debian's build-essential
+gcc
+gcc-c++
+make

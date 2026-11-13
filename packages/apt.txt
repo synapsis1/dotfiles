@@ -1,0 +1,6 @@
+# Packages installed on Debian/Ubuntu hosts. One per line; # starts a comment.
+git
+curl
+tmux
+jq
+build-essential

@@ -1,41 +1,73 @@
 #!/usr/bin/env bash
 # Set up a Linux host from this repo. Safe to re-run.
 #
-#   ./install.sh                install missing packages, link files, hook ~/.bashrc
-#   ./install.sh --no-packages  skip the package step
+#   ./install.sh                   install missing packages, link files, hook ~/.bashrc
+#   ./install.sh --no-packages     skip the package step
+#   ./install.sh --check-packages  list packages that would be installed, then exit
+#
+# Package lists live in packages/apt.txt (Debian/Ubuntu) and packages/dnf.txt (RHEL family).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-PACKAGES=(tmux git curl jq)
 INSTALL_PACKAGES=1
-[[ "${1:-}" == "--no-packages" ]] && INSTALL_PACKAGES=0
+CHECK_ONLY=0
+for arg in "$@"; do
+    case "$arg" in
+        --no-packages) INSTALL_PACKAGES=0 ;;
+        --check-packages) CHECK_ONLY=1 ;;
+        *) echo "unknown option: $arg" >&2; exit 2 ;;
+    esac
+done
 
 say() { printf '%s\n' "$*"; }
 
 # --- 1. Packages -------------------------------------------------------------
+# Sets PKG_MGR and MISSING for this host's package manager.
+find_missing_packages() {
+    local list is_installed p
+    MISSING=()
+    if command -v apt-get >/dev/null 2>&1; then
+        PKG_MGR=apt-get; list="$REPO/packages/apt.txt"
+        is_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q "install ok installed"; }
+    elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then
+        PKG_MGR=$(command -v dnf >/dev/null 2>&1 && echo dnf || echo yum); list="$REPO/packages/dnf.txt"
+        is_installed() { rpm -q "$1" >/dev/null 2>&1; }
+    else
+        PKG_MGR=""
+        return 0
+    fi
+    while IFS= read -r p; do
+        p="${p%%#*}"; p="${p//[[:space:]]/}"
+        [[ -z "$p" ]] && continue
+        is_installed "$p" || MISSING+=("$p")
+    done < "$list"
+}
+
 install_packages() {
-    local missing=() p
-    for p in "${PACKAGES[@]}"; do
-        command -v "$p" >/dev/null 2>&1 || missing+=("$p")
-    done
-    if (( ${#missing[@]} == 0 )); then
+    find_missing_packages
+    if [[ -z "$PKG_MGR" ]]; then
+        say "packages: no supported package manager; skipping"
+        return 0
+    fi
+    if (( ${#MISSING[@]} == 0 )); then
         say "packages: all present"
         return 0
     fi
+    say "packages: missing: ${MISSING[*]}"
+    (( CHECK_ONLY )) && return 0
     local sudo=""
     (( EUID != 0 )) && sudo="sudo"
-    if command -v apt-get >/dev/null 2>&1; then
-        $sudo apt-get update -qq && $sudo apt-get install -y "${missing[@]}"
-    elif command -v dnf >/dev/null 2>&1; then
-        $sudo dnf install -y "${missing[@]}"
-    elif command -v yum >/dev/null 2>&1; then
-        $sudo yum install -y "${missing[@]}"
+    if [[ "$PKG_MGR" == apt-get ]]; then
+        $sudo apt-get update -qq && $sudo apt-get install -y "${MISSING[@]}"
     else
-        say "packages: no supported package manager; install manually: ${missing[*]}"
-        return 0
+        $sudo "$PKG_MGR" install -y "${MISSING[@]}"
     fi
 }
+if (( CHECK_ONLY )); then
+    install_packages
+    exit 0
+fi
 if (( INSTALL_PACKAGES )); then
     install_packages || say "packages: install failed; continuing (missing tools will simply be unavailable)"
 fi
