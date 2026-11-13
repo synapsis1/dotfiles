@@ -11,7 +11,7 @@ automake
 gcc
 gcc-c++
 make
-# bind9-utils -> (dig, host, nslookup, nsupdate)
+# bind9-dnsutils -> (dig, host, nslookup, nsupdate)
 bind-utils
 # xz-utils ->
 xz

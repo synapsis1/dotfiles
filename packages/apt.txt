@@ -4,7 +4,7 @@ curl
 tmux
 jq
 build-essential
-bind9-utils
+bind9-dnsutils
 ca-certificates
 xz-utils
 socat
